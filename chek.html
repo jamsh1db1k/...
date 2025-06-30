@@ -1,38 +1,58 @@
-<!DOCTYPE html><html lang="uz">
+<!DOCTYPE html>
+<html lang="uz">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cheklar</title>
   <style>
     body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; }
     h1 { text-align: center; color: #4ade80; }
     .section { margin: 30px 0; background: #222; padding: 15px; border-radius: 8px; }
-    input, button { padding: 10px; margin: 5px 0; width: 100%; border: none; border-radius: 5px; }
+    .section h2 { margin-bottom: 10px; color: #60a5fa; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; border: none; border-radius: 5px; font-size: 14px; }
     input { background: #333; color: #fff; }
     button { background: #4ade80; color: #000; font-weight: bold; cursor: pointer; }
-    .receipt-link { word-break: break-word; font-size: 14px; color: #4ade80; }
+    .receipt-link { word-break: break-all; font-size: 14px; color: #4ade80; }
     .inactive-receipts div { margin-bottom: 10px; background: #333; padding: 10px; border-radius: 5px; }
+    .inactive-receipts a { color: #60a5fa; text-decoration: none; }
     .back-btn { margin-top: 20px; display: block; text-align: center; background: #444; padding: 10px; border-radius: 5px; text-decoration: none; color: #fff; }
+    #activation-result { margin-top: 10px; font-size: 15px; }
   </style>
 </head>
 <body>
-  <h1>🍉 Cheklar tizimi</h1>  <div class="section" id="generate-section">
+  <h1>🍉 Cheklar tizimi</h1>
+
+  <div class="section" id="generate-section">
     <h2>✅ Chek yaratish</h2>
     <p>3% komissiya olinadi. Masalan, 100 arbuz kiritsangiz, 97 arbuzli chek yaratiladi.</p>
-    <p>Jami arbuzlaringiz: <span id="total-watermelons">Yuklanmoqda...</span></p>
+    <p>Jami arbuzlaringiz: <strong><span id="total-watermelons">Yuklanmoqda...</span></strong></p>
     <input type="number" id="input-amount" placeholder="Chek summasi (butun son)" min="1">
-    <input type="number" id="input-users" placeholder="Chek foydalanuvchilar soni (butun son)" min="1">
+    <input type="number" id="input-users" placeholder="Nechta odam uchun bo‘lasiz?" min="1">
     <button id="generate-btn">Chek yaratish</button>
     <div id="generated-link" class="receipt-link"></div>
-  </div>  <div class="section">
+  </div>
+
+  <div class="section">
     <h2>🗃️ Mening faollashmagan cheklarim</h2>
     <div class="inactive-receipts" id="receipt-list">Yuklanmoqda...</div>
-  </div>  <div class="section" id="activation-section">
-    <h2>🎁 Chekni faollashtirish</h2>
-    <p>Ushbu bo‘lim orqali boshqa foydalanuvchi chekini faollashtirishingiz mumkin.</p>
-    <div id="activation-result"></div>
-  </div><a href="asosiy.html" class="back-btn">⬅️ Ortga</a>
+  </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script>
+  <div class="section" id="activation-section">
+    <h2>🎁 Chekni faollashtirish</h2>
+    <p>Faollashtirish uchun quyida chek ID kiriting:</p>
+    <input type="text" id="activate-id" placeholder="Chek ID (8 xonali)">
+    <button id="activate-btn">Faollashtirish</button>
+    <div id="activation-result"></div>
+  </div>
+
+  <a href="asosiy.html" class="back-btn">⬅️ Ortga</a>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDelpzxrRj8hOR8hmHdCN5bYYuDjDZ4eKw",
       authDomain: "arbuz-b021d.firebaseapp.com",
@@ -42,100 +62,116 @@
       messagingSenderId: "513045300772",
       appId: "1:513045300772:web:1b1acc8e5c8c38afeb7ab1"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
+    // 8 xonali alfanumerik ID yaratish
+    function generateId() {
+      return Math.random().toString(36).substr(2,8);
+    }
+
     auth.onAuthStateChanged(async user => {
       if (!user) return location.href = "login.html";
       const uid = user.uid;
-      const receiptList = document.getElementById("receipt-list");
-      const totalSpan = document.getElementById("total-watermelons");
 
+      // Jami arbuzlar
+      const totalSpan = document.getElementById("total-watermelons");
       const totalSnap = await db.ref("players/" + uid + "/watermelons").get();
       totalSpan.textContent = totalSnap.val() || 0;
 
+      // Chek yaratish
       document.getElementById("generate-btn").onclick = async () => {
-  const raw = parseInt(document.getElementById("input-amount").value);
-  const people = parseInt(document.getElementById("input-users").value);
-  if (!raw || raw < 1 || !people || people < 1) return alert("To‘g‘ri sonlar kiriting");
+        const raw = parseInt(document.getElementById("input-amount").value);
+        const people = parseInt(document.getElementById("input-users").value);
+        if (!raw || raw < 1 || !people || people < 1) {
+          return alert("To‘g‘ri sonlar kiriting");
+        }
+        const amountAfterFee = Math.floor(raw * 0.97);
+        const perUser = Math.floor(amountAfterFee / people);
+        if (perUser < 1) return alert("Arbuz juda kam, bo‘lib bo‘lmaydi");
 
-  const amountAfterFee = Math.floor(raw * 0.97);
-  const perUser = Math.floor(amountAfterFee / people);
-  if (perUser < 1) return alert("Arbuz juda kam, bo‘lib bo‘lmaydi");
+        // Tekshirish va yechish
+        const userRef = db.ref("players/" + uid + "/watermelons");
+        const snap = await userRef.get();
+        const current = snap.val() || 0;
+        if (current < raw) return alert("Yetarli arbuz yo‘q!");
 
-  const snap = await db.ref("players/" + uid + "/watermelons").get();
-  const current = snap.val() || 0;
-  if (current < raw) return alert("Yetarli arbuz yo‘q!");
+        // ID va receipt obyekti
+        const checkId = generateId();
+        const receipt = {
+          amount: amountAfterFee,
+          perUser,
+          totalUsers: people,
+          from: uid,
+          time: Date.now(),
+          usedBy: {},
+          usedCount: 0
+        };
 
-  const checkId = Math.random().toString(36).substring(2, 12);
-  const receipt = {
-    amount: amountAfterFee,
-    from: uid,
-    time: Date.now(),
-    usedBy: {},
-    totalUsers: people,
-    perUser,
-    usedCount: 0
-  };
+        // Yangilash
+        await userRef.set(current - raw);
+        await db.ref("cheklar/" + uid + "/" + checkId).set(receipt);
 
-  await db.ref("players/" + uid + "/watermelons").set(current - raw);
-  await db.ref("cheklar/" + uid + "/" + checkId).set(receipt);
+        const link = `ID: ${checkId}`;
+        document.getElementById("generated-link").innerHTML =
+          `✅ Chek yaratildi: <strong>${link}</strong><br>` +
+          `<em>Har biriga ${perUser} arbuz.</em>`;
+        totalSpan.textContent = current - raw;
+      };
 
-  const link = `http://t.me/NewArbuz_bot/click?startapp=ref_${uid}_receipt_${checkId}`;
-  document.getElementById("generated-link").innerHTML = `
-    ✅ Havola:<br>
-    <a href="${link}" class="receipt-link" target="_blank">${link}</a><br>
-    <a href="https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('🍉 Chekni faollashtiring va arbuz oling!')}" 
-       target="_blank" 
-       style="display:inline-block; margin-top:10px; background:#0088cc; color:white; padding:10px 15px; border-radius:5px; text-decoration:none;">
-      📤 Telegramda ulashish
-    </a>
-  `;
-};
-
+      // Mening aktivlanmagan cheklarim
+      const receiptList = document.getElementById("receipt-list");
       db.ref("cheklar/" + uid).on("value", snap => {
         const val = snap.val() || {};
         receiptList.innerHTML = "";
         Object.entries(val).forEach(([id, d]) => {
-          const link = `http://t.me/NewArbuz_bot/click?startapp=ref_${uid}_receipt_${id}`;
-          if (Object.keys(d.usedBy || {}).length < d.totalUsers) {
-            receiptList.innerHTML += `<div>${d.perUser} arbuz - <a href="${link}" target="_blank">🔗 Havola</a></div>`;
+          if ((d.usedCount || 0) < d.totalUsers) {
+            receiptList.innerHTML +=
+              `<div>ID: <strong>${id}</strong> — ` +
+              `<span>${d.perUser} arbuz × ${d.totalUsers - (d.usedCount||0)} ta</span></div>`;
           }
         });
       });
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const ref = urlParams.get("startapp");
-      if (ref?.includes("receipt")) {
-        const [_, owner, __, checkId] = ref.split("_");
-        const checkRef = db.ref(`cheklar/${owner}/${checkId}`);
+      // Faollashtirish
+      document.getElementById("activate-btn").onclick = async () => {
+        const inputId = document.getElementById("activate-id").value.trim();
+        if (!inputId) return alert("ID kiriting");
+        // Qaysi owner ostida ekanini topish uchun barcha foydalanuvchilarni tekshirmaymiz,
+        // balki receipt ID doim uid cheklari ostida bo‘lgani uchun qat’iy qoidamiz.
+        // Agar turli owner bo‘lishi kerak bo‘lsa, oldingi format talab qilinardi.
+        const owner = inputId && inputId.length === 8 ? uid : uid;
+        const checkRef = db.ref(`cheklar/${owner}/${inputId}`);
+        const snap2 = await checkRef.get();
+        const receipt = snap2.val();
+        if (!receipt) {
+          return document.getElementById("activation-result").textContent =
+            "❌ Chek topilmadi";
+        }
+        if (receipt.usedBy[user.uid]) {
+          return document.getElementById("activation-result").textContent =
+            "❌ Siz allaqachon foydalangansiz";
+        }
+        if ((receipt.usedCount || 0) >= receipt.totalUsers) {
+          return document.getElementById("activation-result").textContent =
+            "❌ Bu chek to‘liq ishlatildi";
+        }
 
-        checkRef.transaction(check => {
-          if (!check) return;
-          if (!check.usedBy) check.usedBy = {};
-          if (check.usedBy[uid]) return;
-          if (Object.keys(check.usedBy).length >= check.totalUsers) return;
+        // Yangilash tranzaksiya bilan
+        await checkRef.child(`usedBy/${uid}`).set(true);
+        await checkRef.child("usedCount").set((receipt.usedCount||0) + 1);
 
-          check.usedBy[uid] = true;
-          check.usedCount = (check.usedCount || 0) + 1;
-          return check;
-        }, async (error, committed, snapshot) => {
-          if (!committed || !snapshot.exists()) return showResult("❌ Faollashtirib bo‘lmadi");
-          const amount = snapshot.val().perUser;
-          const userRef = db.ref("players/" + uid + "/watermelons");
-          const current = (await userRef.get()).val() || 0;
-          await userRef.set(current + amount);
-          showResult(`✅ ${amount} arbuz muvaffaqiyatli faollashtirildi!`);
-        });
-      }
+        // Arbuzni qo‘shish
+        const userRef2 = db.ref("players/" + uid + "/watermelons");
+        const cur2 = (await userRef2.get()).val() || 0;
+        await userRef2.set(cur2 + receipt.perUser);
 
-      function showResult(msg) {
-        document.getElementById("activation-result").innerHTML = `<p style="color:#4ade80">${msg}</p>`;
-      }
+        document.getElementById("activation-result").innerHTML =
+          `<span style="color:#4ade80">✅ ${receipt.perUser} arbuz faollashtirildi!</span>`;
+        totalSpan.textContent = cur2 + receipt.perUser;
+      };
     });
-    
   </script>
-  </body>
+</body>
 </html>
