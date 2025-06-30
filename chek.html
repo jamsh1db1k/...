@@ -1,0 +1,141 @@
+<!DOCTYPE html><html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cheklar</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; }
+    h1 { text-align: center; color: #4ade80; }
+    .section { margin: 30px 0; background: #222; padding: 15px; border-radius: 8px; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; border: none; border-radius: 5px; }
+    input { background: #333; color: #fff; }
+    button { background: #4ade80; color: #000; font-weight: bold; cursor: pointer; }
+    .receipt-link { word-break: break-word; font-size: 14px; color: #4ade80; }
+    .inactive-receipts div { margin-bottom: 10px; background: #333; padding: 10px; border-radius: 5px; }
+    .back-btn { margin-top: 20px; display: block; text-align: center; background: #444; padding: 10px; border-radius: 5px; text-decoration: none; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>🍉 Cheklar tizimi</h1>  <div class="section" id="generate-section">
+    <h2>✅ Chek yaratish</h2>
+    <p>3% komissiya olinadi. Masalan, 100 arbuz kiritsangiz, 97 arbuzli chek yaratiladi.</p>
+    <p>Jami arbuzlaringiz: <span id="total-watermelons">Yuklanmoqda...</span></p>
+    <input type="number" id="input-amount" placeholder="Chek summasi (butun son)" min="1">
+    <input type="number" id="input-users" placeholder="Chek foydalanuvchilar soni (butun son)" min="1">
+    <button id="generate-btn">Chek yaratish</button>
+    <div id="generated-link" class="receipt-link"></div>
+  </div>  <div class="section">
+    <h2>🗃️ Mening faollashmagan cheklarim</h2>
+    <div class="inactive-receipts" id="receipt-list">Yuklanmoqda...</div>
+  </div>  <div class="section" id="activation-section">
+    <h2>🎁 Chekni faollashtirish</h2>
+    <p>Ushbu bo‘lim orqali boshqa foydalanuvchi chekini faollashtirishingiz mumkin.</p>
+    <div id="activation-result"></div>
+  </div><a href="asosiy.html" class="back-btn">⬅️ Ortga</a>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDelpzxrRj8hOR8hmHdCN5bYYuDjDZ4eKw",
+      authDomain: "arbuz-b021d.firebaseapp.com",
+      databaseURL: "https://arbuz-b021d-default-rtdb.firebaseio.com",
+      projectId: "arbuz-b021d",
+      storageBucket: "arbuz-b021d.appspot.com",
+      messagingSenderId: "513045300772",
+      appId: "1:513045300772:web:1b1acc8e5c8c38afeb7ab1"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) return location.href = "login.html";
+      const uid = user.uid;
+      const receiptList = document.getElementById("receipt-list");
+      const totalSpan = document.getElementById("total-watermelons");
+
+      const totalSnap = await db.ref("players/" + uid + "/watermelons").get();
+      totalSpan.textContent = totalSnap.val() || 0;
+
+      document.getElementById("generate-btn").onclick = async () => {
+  const raw = parseInt(document.getElementById("input-amount").value);
+  const people = parseInt(document.getElementById("input-users").value);
+  if (!raw || raw < 1 || !people || people < 1) return alert("To‘g‘ri sonlar kiriting");
+
+  const amountAfterFee = Math.floor(raw * 0.97);
+  const perUser = Math.floor(amountAfterFee / people);
+  if (perUser < 1) return alert("Arbuz juda kam, bo‘lib bo‘lmaydi");
+
+  const snap = await db.ref("players/" + uid + "/watermelons").get();
+  const current = snap.val() || 0;
+  if (current < raw) return alert("Yetarli arbuz yo‘q!");
+
+  const checkId = Math.random().toString(36).substring(2, 12);
+  const receipt = {
+    amount: amountAfterFee,
+    from: uid,
+    time: Date.now(),
+    usedBy: {},
+    totalUsers: people,
+    perUser,
+    usedCount: 0
+  };
+
+  await db.ref("players/" + uid + "/watermelons").set(current - raw);
+  await db.ref("cheklar/" + uid + "/" + checkId).set(receipt);
+
+  const link = `http://t.me/NewArbuz_bot/click?startapp=ref_${uid}_receipt_${checkId}`;
+  document.getElementById("generated-link").innerHTML = `
+    ✅ Havola:<br>
+    <a href="${link}" class="receipt-link" target="_blank">${link}</a><br>
+    <a href="https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('🍉 Chekni faollashtiring va arbuz oling!')}" 
+       target="_blank" 
+       style="display:inline-block; margin-top:10px; background:#0088cc; color:white; padding:10px 15px; border-radius:5px; text-decoration:none;">
+      📤 Telegramda ulashish
+    </a>
+  `;
+};
+
+      db.ref("cheklar/" + uid).on("value", snap => {
+        const val = snap.val() || {};
+        receiptList.innerHTML = "";
+        Object.entries(val).forEach(([id, d]) => {
+          const link = `http://t.me/NewArbuz_bot/click?startapp=ref_${uid}_receipt_${id}`;
+          if (Object.keys(d.usedBy || {}).length < d.totalUsers) {
+            receiptList.innerHTML += `<div>${d.perUser} arbuz - <a href="${link}" target="_blank">🔗 Havola</a></div>`;
+          }
+        });
+      });
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const ref = urlParams.get("startapp");
+      if (ref?.includes("receipt")) {
+        const [_, owner, __, checkId] = ref.split("_");
+        const checkRef = db.ref(`cheklar/${owner}/${checkId}`);
+
+        checkRef.transaction(check => {
+          if (!check) return;
+          if (!check.usedBy) check.usedBy = {};
+          if (check.usedBy[uid]) return;
+          if (Object.keys(check.usedBy).length >= check.totalUsers) return;
+
+          check.usedBy[uid] = true;
+          check.usedCount = (check.usedCount || 0) + 1;
+          return check;
+        }, async (error, committed, snapshot) => {
+          if (!committed || !snapshot.exists()) return showResult("❌ Faollashtirib bo‘lmadi");
+          const amount = snapshot.val().perUser;
+          const userRef = db.ref("players/" + uid + "/watermelons");
+          const current = (await userRef.get()).val() || 0;
+          await userRef.set(current + amount);
+          showResult(`✅ ${amount} arbuz muvaffaqiyatli faollashtirildi!`);
+        });
+      }
+
+      function showResult(msg) {
+        document.getElementById("activation-result").innerHTML = `<p style="color:#4ade80">${msg}</p>`;
+      }
+    });
+    
+  </script>
+  </body>
+</html>

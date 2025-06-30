@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reyting</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0f172a;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 { margin-bottom: 10px; }
+    #searchInput {
+      padding: 8px 12px;
+      width: 80%;
+      max-width: 300px;
+      border-radius: 5px;
+      border: none;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .category-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      max-width: 400px;
+      margin: 0 auto 20px;
+    }
+    .category-buttons button {
+      padding: 12px 10px;
+      border: none;
+      border-radius: 10px;
+      background: #1e3a8a;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+    .category-buttons button.active {
+      background: linear-gradient(90deg, #4f46e5, #06b6d4);
+      font-weight: bold;
+    }
+    .category-buttons button:hover {
+      background-color: #4338ca;
+    }
+    .player {
+      background-color: #1e293b;
+      margin: 8px auto;
+      padding: 10px;
+      max-width: 350px;
+      border-left: 5px solid #22d3ee;
+      border-radius: 4px;
+      text-align: left;
+      font-size: 16px;
+    }
+    .player span {
+      float: right;
+      color: #4ade80;
+      font-weight: bold;
+    }
+    .medal {
+      font-size: 20px;
+      margin-right: 6px;
+    }
+    #myPosition {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    #add-section {
+      margin-top: 30px;
+    }
+    #add-section input {
+      padding: 8px;
+      width: 60%;
+      border: none;
+      border-radius: 5px;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    #add-section button {
+      padding: 8px 16px;
+      background-color: #2563eb;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    #add-section button:hover {
+      background-color: #1d4ed8;
+    }
+    #pagination {
+      margin-top: 20px;
+    }
+    #pagination button {
+      margin: 0 5px;
+      padding: 6px 12px;
+      background-color: #334155;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #pagination button:hover {
+      background-color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <h1>🥇 Reyting Jadvali</h1>
+  <input id="searchInput" type="text" placeholder="Foydalanuvchini qidiring..." oninput="renderList()" />
+  <div class="category-buttons" id="categoryButtons"></div>
+  <div id="list">⏳ Yuklanmoqda...</div>
+  <div id="pagination"></div>
+
+  <div id="add-section">
+    <p>Sizda mavjud arbuzlar: <span id="totalWatermelons">0</span> 🍉</p>
+    <input type="number" id="watermelonInput" placeholder="Nechta qo‘shasiz?">
+    <button onclick="addWatermelons()">➕ Reytingga arbuz qo‘shish</button>
+  </div>
+
+  <div id="myPosition"></div>
+  <br />
+  <button onclick="location.href='asosiy.html'">🔙 Ortga</button>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDelpzxrRj8hOR8hmHdCN5bYYuDjDZ4eKw",
+      authDomain: "arbuz-b021d.firebaseapp.com",
+      databaseURL: "https://arbuz-b021d-default-rtdb.firebaseio.com",
+      projectId: "arbuz-b021d",
+      storageBucket: "arbuz-b021d.appspot.com",
+      messagingSenderId: "513045300772",
+      appId: "1:513045300772:web:1b1acc8e5c8c38afeb7ab1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    let players = [], currentUid = null, currentUser = {}, currentCategoryIndex = 0;
+    const categories = [
+      { label: '🟢 Noob', min: 0, max: 1_000_000 },
+      { label: '🔵 Pro', min: 1_000_000, max: 1_000_000_000 },
+      { label: '🟣 Hakker', min: 1_000_000_000, max: 1_000_000_000_000 },
+      { label: '🟠 Legend', min: 1_000_000_000_000, max: 1_000_000_000_000_000 },
+      { label: '🔴 ♾️', min: 1_000_000_000_000_000, max: 999_000_000_000_000_000_000 }
+    ];
+
+    const list = document.getElementById("list");
+    const searchInput = document.getElementById("searchInput");
+    const watermelonInput = document.getElementById("watermelonInput");
+    const totalWatermelonsSpan = document.getElementById("totalWatermelons");
+    const myPosition = document.getElementById("myPosition");
+    const pagination = document.getElementById("pagination");
+    const categoryButtons = document.getElementById("categoryButtons");
+
+    const ITEMS_PER_PAGE = 10;
+    let currentPage = 1;
+
+    function formatWithDots(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        alert("Avval tizimga kiring!");
+        location.href = "login.html";
+        return;
+      }
+      currentUid = user.uid;
+      loadData();
+    });
+
+    function loadData() {
+      db.ref("players").once("value").then(snap => {
+        const data = snap.val();
+        if (!data) {
+          list.innerHTML = "❌ Ma'lumotlar topilmadi.";
+          return;
+        }
+
+        players = Object.entries(data).map(([uid, p]) => {
+          return {
+            uid,
+            name: p.username || "(no name)",
+            watermelons: p.watermelons || 0,
+            added: p.addedWatermelons || 0
+          };
+        });
+
+        currentUser = players.find(p => p.uid === currentUid);
+        if (!currentUser || !currentUser.name) {
+          alert("Iltimos, profilingizga ism kiriting.");
+          location.href = "profil.html";
+          return;
+        }
+
+        totalWatermelonsSpan.textContent = formatWithDots(currentUser.watermelons);
+        players.sort((a, b) => b.added - a.added);
+        renderCategoryButtons();
+        renderList();
+      });
+    }
+
+    function renderCategoryButtons() {
+      categoryButtons.innerHTML = "";
+      categories.forEach((cat, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = cat.label;
+        if (i === currentCategoryIndex) btn.classList.add("active");
+        btn.onclick = () => {
+          currentCategoryIndex = i;
+          currentPage = 1;
+          renderCategoryButtons();
+          renderList();
+        };
+        categoryButtons.appendChild(btn);
+      });
+    }
+
+    function renderList() {
+      const category = categories[currentCategoryIndex];
+      const filtered = players.filter(p =>
+        p.name.toLowerCase().includes(searchInput.value.toLowerCase()) &&
+        p.added >= category.min &&
+        p.added < category.max
+      );
+
+      const start = (currentPage - 1) * ITEMS_PER_PAGE;
+      const paged = filtered.slice(start, start + ITEMS_PER_PAGE);
+
+      list.innerHTML = "";
+      paged.forEach((p, i) => {
+        const rank = players.findIndex(pp => pp.uid === p.uid) + 1;
+        const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "";
+        const div = document.createElement("div");
+        div.className = "player";
+        div.innerHTML = `<span class="medal">${medal}</span>#${rank} ${p.name} <span>${formatWithDots(p.added)} 🍉</span>`;
+        list.appendChild(div);
+      });
+
+      const myIndex = players.findIndex(p => p.uid === currentUid);
+      if (myIndex !== -1) {
+        myPosition.innerHTML = `Siz reytingda <strong>#${myIndex + 1}</strong> o‘rindasiz.`;
+      }
+
+      renderPagination(filtered.length);
+    }
+
+    function renderPagination(totalItems) {
+      pagination.innerHTML = "";
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        if (i === currentPage) btn.style.backgroundColor = "#1d4ed8";
+        btn.onclick = () => {
+          currentPage = i;
+          renderList();
+        };
+        pagination.appendChild(btn);
+      }
+    }
+
+    function addWatermelons() {
+      const amount = parseInt(watermelonInput.value);
+      if (isNaN(amount) || amount <= 0) {
+        alert("Iltimos, to‘g‘ri son kiriting!");
+        return;
+      }
+
+      const userRef = db.ref("players/" + currentUid);
+      userRef.once("value").then(snap => {
+        const d = snap.val() || {};
+        const available = d.watermelons || 0;
+        const added = d.addedWatermelons || 0;
+
+        if (available < amount) {
+          alert("Sizda yetarli arbuz yo‘q!");
+          return;
+        }
+
+        return userRef.update({
+          watermelons: available - amount,
+          addedWatermelons: added + amount
+        });
+      }).then(() => {
+        watermelonInput.value = "";
+        alert("✅ Reytingga arbuz qo‘shildi!");
+        loadData();
+      });
+    }
+  </script>
+</body>
+</html>

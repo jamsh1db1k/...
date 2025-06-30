@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Ro‘yxatdan o‘tish</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #001a33;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: #122;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 0 10px black;
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+    }
+    button {
+      background: #56ff87;
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .back {
+      display: inline-block;
+      margin-top: 15px;
+      color: #ccc;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Ro‘yxatdan o‘tish</h2>
+  <div class="container">
+    <input type="email" id="email" placeholder="Email" required><br>
+    <input type="password" id="password" placeholder="Parol" required><br>
+    <input type="password" id="confirm" placeholder="Parolni tasdiqlang" required><br>
+    <button onclick="signup()">Ro‘yxatdan o‘tish</button>
+    <p id="message"></p>
+    <a href="login.html" class="back">🔑 Menda allaqachon hisob bor</a>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDelpzxrRj8hOR8hmHdCN5bYYuDjDZ4eKw",
+      authDomain: "arbuz-b021d.firebaseapp.com",
+      projectId: "arbuz-b021d",
+      storageBucket: "arbuz-b021d.appspot.com",
+      messagingSenderId: "513045300772",
+      appId: "1:513045300772:web:1b1acc8e5c8c38afeb7ab1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    function signup() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm").value;
+      const msg = document.getElementById("message");
+
+      if (pass !== confirm) {
+        msg.textContent = "Parollar mos emas!";
+        msg.style.color = "red";
+        return;
+      }
+
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then(userCredential => {
+          const user = userCredential.user;
+          user.sendEmailVerification().then(() => {
+            msg.textContent = "Tasdiqlash xati emailingizga yuborildi!";
+            msg.style.color = "lightgreen";
+          });
+        })
+        .catch(error => {
+          msg.textContent = error.message;
+          msg.style.color = "red";
+        });
+    }
+  </script>
+</body>
+</html>

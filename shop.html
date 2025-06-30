@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop (Firebase + Coin tanlash)</title>
+  <style>
+    /* --- Umumiy style --- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #1e1e1e; color: #fff; padding: 20px; }
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { font-size: 36px; color: #8b9ff9; }
+    .arbuz-count { font-size: 18px; margin-top: 10px; }
+    .sticker-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
+    .sticker-card { cursor: pointer; padding: 8px; border-radius: 12px; background: #2c2c2c; transition: transform .2s; }
+    .sticker-card img { width: 60px; height: 60px; border-radius: 50%; }
+    .sticker-card.selected { border: 2px solid #56ff87; transform: scale(1.05); }
+    /* --- Boostlar style --- */
+    .boost-section { margin-top: 30px; }
+    h2 { font-size: 24px; color: #8b9ff9; margin-bottom: 10px; border-bottom: 2px solid #444; padding-bottom: 4px; }
+    .boost-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+    .boost-card { background: #2c2c2c; padding: 15px; border-radius: 10px; width: calc(50% - 20px); }
+    .boost-card h3 { color: #839ef0; margin-bottom: 6px; }
+    .boost-card p { font-size: 14px; margin: 4px 0; }
+    .boost-card button { background: #738fed; padding: 8px; width: 100%; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; color: #fff; }
+    .boost-card button:disabled { background: #555; cursor: not-allowed; }
+    .back-btn { display: block; margin: 30px auto 0; background: #444; padding: 10px 20px; color: #fff; text-decoration: none; border-radius: 6px; width: 120px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Shop</h1>
+    <div class="arbuz-count">🍉 Jami arbuzlar: <span id="arbuz-count">0</span></div>
+  </header>
+
+  
+
+  <!-- Boostlar bo'limi -->
+  <div class="boost-section">
+    <h2>Click Boostlar:</h2>
+    <div class="boost-grid" id="click-section"></div>
+
+    <h2>Auto Click Boostlar:</h2>
+    <div class="boost-grid" id="auto-click-section"></div>
+
+    <h2>Energy Boostlar:</h2>
+    <div class="boost-grid" id="energy-section"></div>
+  </div>
+  
+  <!-- Sticker tanlash bo'limi -->
+  <section>
+    <h2>Stiker tanlang:</h2>
+    <div class="sticker-grid" id="sticker-grid">
+      <!-- JS bilan to'ldiriladi -->
+    </div>
+  </section>
+  
+
+  <a href="asosiy.html" class="back-btn">⬅️ Ortga</a>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDelpzxrRj8hOR8hmHdCN5bYYuDjDZ4eKw",
+      authDomain: "arbuz-b021d.firebaseapp.com",
+      databaseURL: "https://arbuz-b021d-default-rtdb.firebaseio.com",
+      projectId: "arbuz-b021d",
+      storageBucket: "arbuz-b021d.appspot.com",
+      messagingSenderId: "513045300772",
+      appId: "1:513045300772:web:1b1acc8e5c8c38afeb7ab1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const stickerImages = ["0.png","1.png","2.png","3.png","4.png","5.png","6.png","7.png","8.png","9.png","10.png","11.png","12.png","13.png","14.png","15.png","16.png","17.png",];
+    let selectedSticker = null;
+    let arbuz = 0;
+    const upgrades = {};
+    const boosts = {
+      click: [{ name: "Super Click", basePrice: 1000, power: 1 },
+        { name: "Super Click", basePrice: 5000, power: 3 },
+        { name: "Mega Click", basePrice: 10000, power: 10 },
+        { name: "Mega Click", basePrice: 30000, power: 30 },
+        { name: "Mega Click", basePrice: 50000, power: 50 },
+        { name: "Mega Click", basePrice: 100000, power: 100 },
+        { name: "Mega Click", basePrice: 150000, power: 200 },
+        { name: "Mega Click", basePrice: 250000, power: 500 },
+        { name: "Mega Click", basePrice: 500000, power: 1000 },
+        { name: "Mega Click", basePrice: 1000000, power: 10000 }
+      ],
+      auto: [{ name: "Auto Farmer", basePrice: 1000, power: 1 },
+        { name: "Speed Machine", basePrice: 7000, power: 10 },
+        { name: "Auto Farmer", basePrice: 10000, power: 25 },
+        { name: "Speed Machine", basePrice: 15000, power: 50 },
+        { name: "Auto Farmer", basePrice: 25000, power: 100 },
+        { name: "Speed Machine", basePrice: 50000, power: 250 },
+        { name: "Auto Farmer", basePrice: 100000, power: 500 },
+        { name: "Speed Machine", basePrice: 200000, power: 1000 },
+        { name: "Auto Farmer", basePrice: 500000, power: 500000 },
+        { name: "Speed Machine", basePrice: 1000000, power: 1000000 }
+      ],
+      energy: [ { name: "Power Drink", basePrice: 100000, power: 0.1 },
+        { name: "Energy Core", basePrice: 250000, power: 0.3 },
+        { name: "Power Drink", basePrice: 750000, power: 0.5 },
+        { name: "Energy Core", basePrice: 1000000, power: 0.7 },
+        { name: "Power Drink", basePrice: 2500000, power: 0.9 },
+        { name: "Energy Core", basePrice: 5000000, power: 1 }
+        ]
+    };
+    const growthRates = { click: 80, auto: 100, energy: 110 };
+
+    function formatNumber(num) {
+      if (num < 1000) return num.toString();
+      const units = ["K","M","B","T","q","Kv"];
+      let i=-1; let n=num;
+      while(n>=1000 && i<units.length-1) { n/=1000; i++; }
+      return n.toFixed(2).replace(/\.?0+$/,"") + units[i];
+    }
+
+    auth.onAuthStateChanged(u=>{
+      if(!u){ alert("Kirish kerak"); location="login.html"; return; }
+      const uid=u.uid;
+      db.ref("players/"+uid).once("value").then(s=>{
+        const data=s.val()||{};
+        arbuz=data.watermelons||0;
+        selectedSticker=data.selectedSticker||null;
+        Object.keys(data).forEach(k=>k.includes("-boost-") && (upgrades[k]=data[k]));
+        updateUI();
+      });
+    });
+
+    function updateUI(){
+      document.getElementById("arbuz-count").textContent = formatNumber(arbuz);
+      loadStickerGrid();
+      renderBoosts("click-section","click",boosts.click);
+      renderBoosts("auto-click-section","auto",boosts.auto);
+      renderBoosts("energy-section","energy",boosts.energy);
+    }
+
+    function loadStickerGrid(){
+      const grid = document.getElementById("sticker-grid");
+      grid.innerHTML = "";
+      stickerImages.forEach(src => {
+        const div = document.createElement("div");
+        div.className = "sticker-card";
+        if(src===selectedSticker) div.classList.add("selected");
+        const img = document.createElement("img");
+        img.src = src;
+        div.appendChild(img);
+        div.onclick = ()=>{
+          selectedSticker = src;
+          auth.currentUser && db.ref("players/"+auth.currentUser.uid+"/selectedSticker").set(src);
+          loadStickerGrid();
+        };
+        grid.appendChild(div);
+      });
+    }
+
+    function getLevel(t,i){ return upgrades[`${t}-boost-${i}-lvl`]||0 }
+    function getPrice(bp,lv,t){ return Math.floor(bp*Math.pow(1+growthRates[t]/100,lv)) }
+
+    function renderBoosts(sec,type,list){
+      const secDiv=document.getElementById(sec);
+      secDiv.innerHTML="";
+      list.forEach((b,i)=>{
+        const lvl=getLevel(type,i), price=getPrice(b.basePrice,lvl,type);
+        const div=document.createElement("div"); div.className="boost-card";
+        div.innerHTML = `<h3>${b.name}</h3>
+                         <p>Daraja: ${lvl}</p>
+                         <p>+${b.power}</p>
+                         <p>Narxi: ${formatNumber(price)}</p>
+                         <button ${arbuz<price?"disabled":""}>Sotib olish</button>`;
+        const btn=div.querySelector("button");
+        btn.onclick=()=>{
+          if(arbuz>=price){
+            arbuz -= price;
+            db.ref("players/"+auth.currentUser.uid+"/watermelons").set(arbuz);
+            const path = type==="energy"?"energyRegen":type==="auto"?"autoClicker":"clickPower";
+            db.ref("players/"+auth.currentUser.uid+"/"+path).transaction(v=>(v||0)+b.power);
+            db.ref("players/"+auth.currentUser.uid+`/${type}-boost-${i}-lvl`).set(lvl+1);
+            updateUI();
+          }
+        };
+        secDiv.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>

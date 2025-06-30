@@ -1,0 +1,64 @@
+<!DOCTYPE html><html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kutish...</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(-45deg, #001f3f, #003366, #001a33, #000d1a);
+      background-size: 400% 400%;
+      animation: backgroundMove 8s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: white;
+      font-family: Arial, sans-serif;
+      flex-direction: column;
+    }
+    @keyframes backgroundMove {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    .loader {
+      width: 300px;
+      height: 25px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      overflow: hidden;
+      margin-top: 30px;
+    }
+    .bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(to right, #56ff87, #00cc66);
+      animation: fillBar 5s linear forwards;
+    }
+    @keyframes fillBar {
+      0% { width: 0; }
+      100% { width: 100%; }
+    }
+    .percentage {
+      margin-top: 15px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="text">Oʻyin yuklanmoqda...</div>
+  <div class="loader"><div class="bar" id="bar"></div></div>
+  <div class="percentage" id="percent">0%</div>  <script>
+    let percent = 0;
+    const percentDisplay = document.getElementById("percent");
+    const interval = setInterval(() => {
+      percent++;
+      percentDisplay.textContent = percent + "%";
+      if (percent >= 100) {
+        clearInterval(interval);
+        window.location.href = "asosiy.html";
+      }
+    }, 50); // 100% in 5s (100 x 50ms = 5000ms)
+  </script></body>
+</html>

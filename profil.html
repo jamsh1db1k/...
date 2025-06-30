@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Profil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      padding: 20px;
+      text-align: center;
+    }
+    .profile-box {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: 30px auto;
+      box-shadow: 0 0 10px rgba(0, 255, 100, 0.2);
+    }
+    h2 {
+      margin-bottom: 10px;
+      color: #56ff87;
+    }
+    .inline-input {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    input[type="text"] {
+      padding: 6px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #4CAF50;
+      width: 60%;
+      max-width: 200px;
+      text-align: center;
+      background-color: #1a1a1a;
+      color: white;
+    }
+    .back-btn, .logout-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .back-btn:hover, .logout-btn:hover {
+      background-color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-box">
+    <h2>👤 Profil</h2>
+    <p><strong>Email:</strong> <span id="user-email">Tekshirilmoqda...</span></p>
+    <div class="inline-input">
+      <input type="text" id="username" placeholder="Ismingizni kiriting">
+    </div>
+    <p><strong>🍉 Arbuzlar:</strong> <span id="watermelons">-</span></p>
+    <p><strong>✋ Click Power:</strong> <span id="clickPower">-</span></p>
+    <p><strong>⚙️ Auto Clicker:</strong> <span id="autoClicker">-</span></p>
+    <p><strong>⚡ Energy Regen:</strong> <span id="energyRegen">-</span></p>
+    <button class="back-btn" onclick="saveAndGoBack()">Ortga</button>
+    <button class="logout-btn" onclick="logout()">Tizimdan chiqish</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDelpzxrRj8hOR8hmHdCN5bYYuDjDZ4eKw",
+      authDomain: "arbuz-b021d.firebaseapp.com",
+      databaseURL: "https://arbuz-b021d-default-rtdb.firebaseio.com",
+      projectId: "arbuz-b021d",
+      storageBucket: "arbuz-b021d.appspot.com",
+      messagingSenderId: "513045300772",
+      appId: "1:513045300772:web:1b1acc8e5c8c38afeb7ab1"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+    let uid = null;
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        document.getElementById('user-email').textContent = 'Tizimga kirmagan';
+        return;
+      }
+
+      uid = user.uid;
+      document.getElementById('user-email').textContent = user.email || '(anonim)';
+      const usernameInput = document.getElementById('username');
+
+      db.ref("players/" + uid + "/username").once("value").then(snap => {
+        if (snap.exists()) {
+          usernameInput.value = snap.val();
+        }
+      });
+
+      db.ref("players/" + uid).once("value").then(snapshot => {
+        const data = snapshot.val() || {};
+        const rawWatermelons = data.watermelons || 0;
+        const rawAutoClicker = data.autoClicker || 0;
+
+        document.getElementById('watermelons').textContent = formatNumber(rawWatermelons);
+        document.getElementById('clickPower').textContent = data.clickPower || 1;
+        document.getElementById('autoClicker').textContent = formatNumber(rawAutoClicker);
+        document.getElementById('energyRegen').textContent = (data.energyRegen || 0.1).toFixed(1);
+      });
+    });
+
+    function saveAndGoBack() {
+      const usernameInput = document.getElementById('username');
+      const name = usernameInput.value.trim();
+      if (uid && name) {
+        db.ref("players/" + uid + "/username").set(name).then(() => {
+          window.location.href = 'asosiy.html';
+        });
+      } else {
+        alert("Iltimos, foydalanuvchi nomini kiriting.");
+      }
+    }
+
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        alert("Tizimdan chiqildi");
+        window.location.href = "login.html";
+      });
+    }
+
+    function formatNumber(num) {
+      if (num < 1000) return num.toString();
+      const units = ["K", "M", "B", "T", "q", "Kv"];
+      let unitIndex = -1;
+      let n = num;
+      while (n >= 1000 && unitIndex < units.length - 1) {
+        n /= 1000;
+        unitIndex++;
+      }
+      return n.toFixed(3).replace(/\.?0+$/, '') + ' ' + units[unitIndex];
+    }
+  </script>
+</body>
+</html>

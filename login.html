@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Kirish - Arbuz Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f0fff0, #c1f0d1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    h2 {
+      text-align: center;
+      color: #28a745;
+      margin-bottom: 24px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #28a745;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    .error {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      input, button {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Kirish</h2>
+    <input type="email" id="email" placeholder="Emailni kiriting">
+    <input type="password" id="password" placeholder="Parolni kiriting">
+
+ <button onclick="login()">Tizimga kirish!</button>
+    <div style="text-align: center; margin-top: 15px;">
+      <span>Men roʻyhatdan oʻtmaganman! </span>
+      <a href="signup.html" style="color: #28a745; text-decoration: none; font-weight: bold;">
+        Kirish
+      </a>
+    </div>
+     <div id="error" class="error"></div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDelpzxrRj8hOR8hmHdCN5bYYuDjDZ4eKw",
+      authDomain: "arbuz-b021d.firebaseapp.com",
+      databaseURL: "https://arbuz-b021d-default-rtdb.firebaseio.com",
+      projectId: "arbuz-b021d",
+      storageBucket: "arbuz-b021d.appspot.com",
+      messagingSenderId: "513045300772",
+      appId: "1:513045300772:web:1b1acc8e5c8c38afeb7ab1"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const errorDiv = document.getElementById("error");
+      errorDiv.textContent = "";
+
+      if (!email || !password) {
+        errorDiv.textContent = "Iltimos, barcha maydonlarni to'ldiring!";
+        return;
+      }
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          // Kirish muvaffaqiyatli
+          window.location.href = "index.html"; // Sahifani almashtir
+        })
+        .catch((error) => {
+          if (error.code === "auth/user-not-found") {
+            errorDiv.textContent = "Bunday foydalanuvchi mavjud emas!";
+          } else if (error.code === "auth/wrong-password") {
+            errorDiv.textContent = "Parol noto‘g‘ri!";
+          } else if (error.code === "auth/invalid-email") {
+            errorDiv.textContent = "Email noto‘g‘ri!";
+          } else {
+            errorDiv.textContent = "Xatolik: " + error.message;
+          }
+        });
+    }
+  </script>
+
+</body>
+</html>
