@@ -108,7 +108,7 @@
           if (d.from === uid && Object.keys(d.usedBy || {}).length < d.totalUsers) {
             const div = document.createElement("div");
             div.className = "receipt-item";
-            div.innerHTML = `ID: <strong>${id}</strong><br>🌟 ${d.perUser} arbuz × ${d.totalUsers} kishi`;
+            div.innerHTML = `ID:  <strong>${id}</strong><br>🌟 ${d.perUser} arbuz × ${d.totalUsers} kishi`;
             list.appendChild(div);
           }
         });
