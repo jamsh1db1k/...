@@ -73,7 +73,7 @@
       document.getElementById("generate-btn").onclick = async () => {
         const raw = parseInt(document.getElementById("input-amount").value);
         const people = parseInt(document.getElementById("input-users").value);
-        if (!raw || raw < 1 || !people || people < 1) return alert("To‘g‘ri sonlar kiriting");
+        if (!raw || raw < 0 || !people || people < 1) return alert("To‘g‘ri sonlar kiriting");
 
         const amount = raw;
         const perUser = Math.floor(amount / people);
