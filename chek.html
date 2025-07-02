@@ -20,7 +20,7 @@
 
   <div class="section">
     <h2>✅ Chek yaratish</h2>
-    <p>3% komissiya olinadi. Masalan, 100 kiritsangiz, 97 arbuz chek bo‘ladi.</p>
+    <p>1% komissiya olinadi.</p>
     <p>Jami arbuzlaringiz: <strong><span id="total-watermelons">Yuklanmoqda...</span></strong></p>
     <input type="number" id="input-amount" placeholder="Chek summasi (butun son)">
     <input type="number" id="input-users" placeholder="Nechta foydalanuvchi (butun son)">
@@ -75,7 +75,7 @@
         const people = parseInt(document.getElementById("input-users").value);
         if (!raw || raw < 1 || !people || people < 1) return alert("To‘g‘ri sonlar kiriting");
 
-        const amount = Math.floor(raw * 0.97);
+        const amount = Math.floor(raw * 0.99);
         const perUser = Math.floor(amount / people);
         if (perUser < 1) return alert("Arbuz juda kam, bo‘lib bo‘lmaydi");
 
@@ -117,7 +117,7 @@
       // Faollashtirish
       document.getElementById("activate-btn").onclick = async () => {
         const id = document.getElementById("activate-id").value.trim();
-        if (!id || id.length !== 8) return alert("8 belgili chek ID kiriting");
+        if (!id || id.length !== 8) return alert("chekni ID kiriting");
 
         const ref = db.ref(`cheklar/${id}`);
         ref.transaction(rec => {
