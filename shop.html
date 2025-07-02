@@ -74,42 +74,42 @@
     const boosts = {
       click: [
         { name: "1-boots", basePrice: 1000, power: 1 },
-        { name: "2-boots", basePrice: 5000, power: 3 },
-        { name: "3-boots", basePrice: 10000, power: 5 },
-        { name: "4-boots", basePrice: 30000, power: 8 },
-        { name: "5-boots", basePrice: 50000, power: 10 },
-        { name: "6-boots", basePrice: 70000, power: 15 },
-        { name: "7-boots", basePrice: 80000, power: 20 },
-        { name: "8-boots", basePrice: 90000, power: 25 },
-        { name: "9-boots", basePrice: 100000, power: 30 },
-        { name: "10-boots", basePrice: 150000, power: 50 }
+        { name: "2-boots", basePrice: 10000, power: 3 },
+        { name: "3-boots", basePrice: 50000, power: 5 },
+        { name: "4-boots", basePrice: 120000, power: 8 },
+        { name: "5-boots", basePrice: 250000, power: 10 },
+        { name: "6-boots", basePrice: 700000, power: 15 },
+        { name: "7-boots", basePrice: 1500000, power: 20 },
+        { name: "8-boots", basePrice: 5000000, power: 25 },
+        { name: "9-boots", basePrice: 25000000, power: 30 },
+        { name: "10-boots", basePrice: 75000000, power: 50 }
         ],
       auto: [
-        { name: "1-boots", basePrice: 1000, power: 1 },
-        { name: "2-boots", basePrice: 5000, power: 3 },
-        { name: "3-boots", basePrice: 10000, power: 5 },
-        { name: "4-boots", basePrice: 30000, power: 8 },
-        { name: "5-boots", basePrice: 50000, power: 10 },
-        { name: "6-boots", basePrice: 70000, power: 15 },
-        { name: "7-boots", basePrice: 80000, power: 20 },
-        { name: "8-boots", basePrice: 90000, power: 25 },
-        { name: "9-boots", basePrice: 100000, power: 30 },
-        { name: "10-boots", basePrice: 150000, power: 50 }
+        { name: "1-boots", basePrice: 2000, power: 1 },
+        { name: "2-boots", basePrice: 15000, power: 3 },
+        { name: "3-boots", basePrice: 60000, power: 5 },
+        { name: "4-boots", basePrice: 150000, power: 8 },
+        { name: "5-boots", basePrice: 450000, power: 10 },
+        { name: "6-boots", basePrice: 1000000, power: 15 },
+        { name: "7-boots", basePrice: 3000000, power: 20 },
+        { name: "8-boots", basePrice: 10000000, power: 25 },
+        { name: "9-boots", basePrice: 20000000, power: 30 },
+        { name: "10-boots", basePrice: 50000000, power: 50 }
         ],
       energy: [
-        { name: "1-boots", basePrice: 1000, power: 0.1 },
-        { name: "2-boots", basePrice: 5000, power: 0.3 },
-        { name: "3-boots", basePrice: 10000, power: 0.5 },
-        { name: "4-boots", basePrice: 30000, power: 0.7 },
-        { name: "5-boots", basePrice: 50000, power: 0.9 },
-        { name: "6-boots", basePrice: 70000, power: 1 }
+        { name: "1-boots", basePrice: 5000, power: 0.1 },
+        { name: "2-boots", basePrice: 15000, power: 0.3 },
+        { name: "3-boots", basePrice: 50000, power: 0.5 },
+        { name: "4-boots", basePrice: 150000, power: 0.7 },
+        { name: "5-boots", basePrice: 500000, power: 0.9 },
+        { name: "6-boots", basePrice: 15000000, power: 1 }
         ]
     };
-    const growthRates = { click: 80, auto: 100, energy: 110 };
+    const growthRates = { click: 60, auto: 90, energy: 120 };
 
     function formatNumber(num) {
       if (num < 1000) return num.toString();
-      const units = ["K","M","B","T"];
+      const units = ["K","M","B","T","q","kv"];
       let i = -1;
       while (num >= 1000 && ++i < units.length) num /= 1000;
       return num.toFixed(2).replace(/\.?0+$/, "") + units[i];
